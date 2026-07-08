@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Caption Generator</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet" />
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <style>
+        /* ---------- RESET & VARIABLES ---------- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #0f0f1a;
+            --surface: #1a1a2e;
+            --surface2: #252542;
+            --primary: #6c5ce7;
+            --primary-light: #a29bfe;
+            --text: #eeeef8;
+            --text-muted: #9a9abf;
+            --border: #2d2d4a;
+            --radius: 20px;
+            --shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+            --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        /* ---------- MAIN CONTAINER ---------- */
+        .app {
+            max-width: 1200px;
+            width: 100%;
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 40px 36px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+        }
+
+        /* ---------- HEADER ---------- */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 32px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .logo i {
+            font-size: 36px;
+            color: var(--primary-light);
+            background: rgba(108, 92, 231, 0.2);
+            padding: 12px;
+            border-radius: 16px;
+        }
+
+        .logo h1 {
+            font-size: 26px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #fff 0%, var(--primary-light) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .logo span {
+            font-weight: 400;
+            font-size: 14px;
+            color: var(--text-muted);
+            display: block;
+            margin-top: 2px;
+            -webkit-text-fill-color: var(--text-muted);
+        }
+
+        .api-key-area {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: var(--surface2);
+            padding: 8px 16px 8px 20px;
+            border-radius: 40px;
+            border: 1px solid var(--border);
+        }
+
+        .api-key-area label {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .api-key-area label i {
+            color: var(--primary-light);
+        }
+
+        .api-key-area input {
+            background: transparent;
+            border: none;
+            padding: 8px 4px;
+            color: var(--text);
+            font-size: 14px;
+            width: 200px;
+            outline: none;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .api-key-area input::placeholder {
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        .api-key-area .btn-key {
+            background: var(--primary);
+            border: none;
+            color: #fff;
+            padding: 6px 14px;
+            border-radius: 30px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .api-key-area .btn-key:hover {
+            background: #5a4bd1;
+            transform: scale(1.03);
+        }
+
+        /* ---------- UPLOAD ZONE ---------- */
+        .upload-zone {
+            background: var(--surface2);
+            border: 2px dashed var(--border);
+            border-radius: var(--radius);
+            padding: 48px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            margin-bottom: 28px;
+            position: relative;
+        }
+
+        .upload-zone:hover {
+            border-color: var(--primary);
+            background: #1f1f3a;
+        }
+
+        .upload-zone.dragover {
+            border-color: var(--primary-light);
+            background: #25254a;
+            transform: scale(1.01);
+        }
+
+        .upload-zone i {
+            font-size: 52px;
+            color: var(--primary-light);
+            margin-bottom: 16px;
+            opacity: 0.8;
+        }
+
+        .upload-zone h3 {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .upload-zone p {
+            color: var(--text-muted);
+            font-size: 15px;
+        }
+
+        .upload-zone .file-types {
+            margin-top: 12px;
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .upload-zone .file-types span {
+            background: var(--bg);
+            padding: 4px 14px;
+            border-radius: 30px;
+            border: 1px solid var(--border);
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        /* preview image/video */
+        .preview-container {
+            margin-top: 20px;
+            display: none;
+            justify-content: center;
+        }
+
+        .preview-container img,
+        .preview-container video {
+            max-width: 100%;
+            max-height: 320px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            object-fit: contain;
+            background: #0a0a14;
+        }
+
+        .preview-container.show {
+            display: flex;
+        }
+
+        /* ---------- TEMPLATE SELECTOR ---------- */
+        .template-section {
+            margin-bottom: 28px;
+        }
+
+        .template-section label {
+            font-size: 15px;
+            font-weight: 600;
+            display: block;
+            margin-bottom: 14px;
+            letter-spacing: 0.3px;
+        }
+
+        .template-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 14px;
+        }
+
+        .template-card {
+            background: var(--surface2);
+            border: 2px solid transparent;
+            border-radius: 16px;
+            padding: 16px 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            position: relative;
+        }
+
+        .template-card:hover {
+            transform: translateY(-3px);
+            background: #2a2a4a;
+        }
+
+        .template-card.active {
+            border-color: var(--primary);
+            background: #2a2a4a;
+            box-shadow: 0 0 20px rgba(108, 92, 231, 0.2);
+        }
+
+        .template-card .badge {
+            font-size: 24px;
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        .template-card .label {
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .template-card .preview-text {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 6px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            line-height: 1.4;
+        }
+
+        .template-card .check {
+            position: absolute;
+            top: 8px;
+            right: 10px;
+            color: var(--primary-light);
+            font-size: 14px;
+            display: none;
+        }
+
+        .template-card.active .check {
+            display: block;
+        }
+
+        /* ---------- GENERATE BUTTON ---------- */
+        .btn-generate {
+            background: linear-gradient(135deg, var(--primary), #8b7cf7);
+            border: none;
+            color: #fff;
+            font-weight: 700;
+            font-size: 18px;
+            padding: 16px 32px;
+            border-radius: 60px;
+            width: 100%;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+            font-family: 'Inter', sans-serif;
+            letter-spacing: 0.3px;
+            margin-bottom: 28px;
+        }
+
+        .btn-generate:hover {
+            transform: scale(1.01);
+            box-shadow: 0 10px 30px rgba(108, 92, 231, 0.3);
+        }
+
+        .btn-generate:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-generate i {
+            font-size: 20px;
+        }
+
+        /* ---------- RESULT / CAPTION ---------- */
+        .result-box {
+            background: var(--surface2);
+            border-radius: var(--radius);
+            padding: 28px 32px;
+            border: 1px solid var(--border);
+            min-height: 120px;
+            display: none;
+            animation: fadeUp 0.4s ease;
+        }
+
+        .result-box.show {
+            display: block;
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(16px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .result-box .caption-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .result-box .caption-header h3 {
+            font-size: 18px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .result-box .caption-header h3 i {
+            color: var(--primary-light);
+        }
+
+        .result-box .caption-header .copy-btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 8px 18px;
+            border-radius: 30px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .result-box .caption-header .copy-btn:hover {
+            background: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
+        }
+
+        .result-box .caption-body {
+            font-size: 16px;
+            line-height: 1.8;
+            color: var(--text);
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .result-box .caption-body .placeholder-text {
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        /* ---------- LOADING ---------- */
+        .loading-spinner {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            padding: 20px 0;
+            color: var(--text-muted);
+        }
+
+        .loading-spinner.show {
+            display: flex;
+        }
+
+        .spinner {
+            width: 28px;
+            height: 28px;
+            border: 3px solid var(--border);
+            border-top: 3px solid var(--primary-light);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* ---------- RESPONSIVE ---------- */
+        @media (max-width: 768px) {
+            .app {
+                padding: 24px 16px;
+            }
+
+            .header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .api-key-area {
+                flex-wrap: wrap;
+                padding: 12px 16px;
+                border-radius: 16px;
+            }
+
+            .api-key-area input {
+                width: 100%;
+            }
+
+            .template-grid {
+                grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            }
+
+            .result-box {
+                padding: 20px;
+            }
+
+            .upload-zone {
+                padding: 32px 16px;
+            }
+
+            .upload-zone i {
+                font-size: 40px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .logo h1 {
+                font-size: 20px;
+            }
+
+            .template-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .btn-generate {
+                font-size: 16px;
+                padding: 14px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app">
+        <!-- HEADER -->
+        <header class="header">
+            <div class="logo">
+                <i class="fas fa-wand-magic-sparkles"></i>
+                <div>
+                    <h1>CaptionForge</h1>
+                    <span>AI-powered caption generator</span>
+                </div>
+            </div>
+            <div class="api-key-area">
+                <label for="apiKeyInput">
+                    <i class="fas fa-key"></i> API Key
+                </label>
+                <input type="password" id="apiKeyInput" placeholder="Masukkan API key..." />
+                <button class="btn-key" id="saveKeyBtn">Simpan</button>
+            </div>
+        </header>
+
+        <!-- UPLOAD ZONE -->
+        <div class="upload-zone" id="uploadZone">
+            <i class="fas fa-cloud-arrow-up"></i>
+            <h3>Upload foto atau video</h3>
+            <p>Klik atau drag &amp; drop file di sini</p>
+            <div class="file-types">
+                <span><i class="fas fa-image"></i> JPG, PNG</span>
+                <span><i class="fas fa-video"></i> MP4, MOV</span>
+            </div>
+            <input type="file" id="fileInput" accept="image/*,video/*" />
+        </div>
+
+        <!-- PREVIEW -->
+        <div class="preview-container" id="previewContainer">
+            <img id="previewImage" src="#" alt="Preview" style="display:none;" />
+            <video id="previewVideo" controls style="display:none;"></video>
+        </div>
+
+        <!-- TEMPLATE SELECTOR -->
+        <div class="template-section">
+            <label><i class="fas fa-palette" style="margin-right:10px;color:var(--primary-light);"></i>Pilih Template Caption</label>
+            <div class="template-grid" id="templateGrid">
+                <!-- Template 1 -->
+                <div class="template-card active" data-template="1">
+                    <span class="badge">✨</span>
+                    <div class="label">Elegan & Mewah</div>
+                    <div class="preview-text">"Keindahan dalam setiap detail..."</div>
+                    <span class="check"><i class="fas fa-check-circle"></i></span>
+                </div>
+                <!-- Template 2 -->
+                <div class="template-card" data-template="2">
+                    <span class="badge">🔥</span>
+                    <div class="label">Bold & Berani</div>
+                    <div class="preview-text">"Tampil beda, bersinar terang..."</div>
+                    <span class="check"><i class="fas fa-check-circle"></i></span>
+                </div>
+                <!-- Template 3 -->
+                <div class="template-card" data-template="3">
+                    <span class="badge">🌿</span>
+                    <div class="label">Natural & Santai</div>
+                    <div class="preview-text">"Hidup sederhana, bahagia..."</div>
+                    <span class="check"><i class="fas fa-check-circle"></i></span>
+                </div>
+                <!-- Template 4 -->
+                <div class="template-card" data-template="4">
+                    <span class="badge">💫</span>
+                    <div class="label">Inspiratif</div>
+                    <div class="preview-text">"Mimpi besar dimulai dari sini..."</div>
+                    <span class="check"><i class="fas fa-check-circle"></i></span>
+                </div>
+                <!-- Template 5 -->
+                <div class="template-card" data-template="5">
+                    <span class="badge">🎬</span>
+                    <div class="label">Kreatif & Cinematic</div>
+                    <div class="preview-text">"Cerita dalam setiap frame..."</div>
+                    <span class="check"><i class="fas fa-check-circle"></i></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- GENERATE BUTTON -->
+        <button class="btn-generate" id="generateBtn">
+            <i class="fas fa-wand-magic-sparkles"></i> Generate Caption
+        </button>
+
+        <!-- LOADING -->
+        <div class="loading-spinner" id="loadingSpinner">
+            <div class="spinner"></div>
+            <span>Menganalisis konten &amp; menghasilkan caption...</span>
+        </div>
+
+        <!-- RESULT -->
+        <div class="result-box" id="resultBox">
+            <div class="caption-header">
+                <h3><i class="fas fa-quote-left"></i> Caption Hasil</h3>
+                <button class="copy-btn" id="copyBtn"><i class="fas fa-copy"></i> Salin</button>
+            </div>
+            <div class="caption-body" id="captionBody">
+                <span class="placeholder-text">Caption akan muncul di sini...</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            // ---------- DOM REFS ----------
+            const uploadZone = document.getElementById('uploadZone');
+            const fileInput = document.getElementById('fileInput');
+            const previewContainer = document.getElementById('previewContainer');
+            const previewImage = document.getElementById('previewImage');
+            const previewVideo = document.getElementById('previewVideo');
+            const templateCards = document.querySelectorAll('.template-card');
+            const generateBtn = document.getElementById('generateBtn');
+            const resultBox = document.getElementById('resultBox');
+            const captionBody = document.getElementById('captionBody');
+            const copyBtn = document.getElementById('copyBtn');
+            const loadingSpinner = document.getElementById('loadingSpinner');
+            const apiKeyInput = document.getElementById('apiKeyInput');
+            const saveKeyBtn = document.getElementById('saveKeyBtn');
+
+            // ---------- STATE ----------
+            let selectedFile = null; // File object
+            let selectedTemplate = '1'; // default
+            let currentCaption = '';
+
+            // ---------- API KEY PERSISTENCE ----------
+            // Load key from localStorage
+            const savedKey = localStorage.getItem('captionforge_api_key');
+            if (savedKey) {
+                apiKeyInput.value = savedKey;
+            }
+
+            saveKeyBtn.addEventListener('click', function() {
+                const key = apiKeyInput.value.trim();
+                if (key) {
+                    localStorage.setItem('captionforge_api_key', key);
+                    alert('API Key berhasil disimpan!');
+                } else {
+                    localStorage.removeItem('captionforge_api_key');
+                    alert('API Key dihapus.');
+                }
+            });
+
+            // ---------- UPLOAD LOGIC ----------
+            uploadZone.addEventListener('click', function(e) {
+                if (e.target.closest('.file-types')) return;
+                fileInput.click();
+            });
+
+            uploadZone.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                uploadZone.classList.add('dragover');
+            });
+
+            uploadZone.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                uploadZone.classList.remove('dragover');
+            });
+
+            uploadZone.addEventListener('drop', function(e) {
+                e.preventDefault();
+                uploadZone.classList.remove('dragover');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    handleFile(files[0]);
+                }
+            });
+
+            fileInput.addEventListener('change', function(e) {
+                if (this.files.length > 0) {
+                    handleFile(this.files[0]);
+                }
+            });
+
+            function handleFile(file) {
+                const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'video/mp4', 'video/quicktime',
+                    'video/x-msvideo'
+                ];
+                if (!validTypes.includes(file.type)) {
+                    alert('Format file tidak didukung. Gunakan JPG, PNG, MP4, atau MOV.');
+                    return;
+                }
+
+                selectedFile = file;
+                const url = URL.createObjectURL(file);
+
+                // Show preview
+                previewContainer.classList.add('show');
+                if (file.type.startsWith('image/')) {
+                    previewImage.style.display = 'block';
+                    previewVideo.style.display = 'none';
+                    previewImage.src = url;
+                } else {
+                    previewImage.style.display = 'none';
+                    previewVideo.style.display = 'block';
+                    previewVideo.src = url;
+                    previewVideo.load();
+                }
+
+                // Auto-hide previous result
+                resultBox.classList.remove('show');
+            }
+
+            // ---------- TEMPLATE SELECTION ----------
+            templateCards.forEach(card => {
+                card.addEventListener('click', function() {
+                    templateCards.forEach(c => c.classList.remove('active'));
+                    this.classList.add('active');
+                    selectedTemplate = this.dataset.template;
+                    // Hide result when template changes
+                    resultBox.classList.remove('show');
+                });
+            });
+
+            // ---------- GENERATE CAPTION ----------
+            generateBtn.addEventListener('click', function() {
+                // Validasi: API Key
+                const apiKey = apiKeyInput.value.trim();
+                if (!apiKey) {
+                    alert('Silakan masukkan dan simpan API Key terlebih dahulu.');
+                    return;
+                }
+
+                // Validasi: file
+                if (!selectedFile) {
+                    alert('Silakan upload foto atau video terlebih dahulu.');
+                    return;
+                }
+
+                // Show loading
+                loadingSpinner.classList.add('show');
+                generateBtn.disabled = true;
+                resultBox.classList.remove('show');
+
+                // In a real app, you'd call Google Gemini API here.
+                // Since we're simulating, we'll generate based on template after a delay.
+                // But we'll also simulate a "real" analysis by using file metadata.
+                setTimeout(() => {
+                    const caption = generateCaptionFromTemplate(selectedTemplate, selectedFile);
+                    currentCaption = caption;
+                    displayCaption(caption);
+                    loadingSpinner.classList.remove('show');
+                    generateBtn.disabled = false;
+                }, 1500);
+            });
+
+            // ---------- CAPTION GENERATOR (SIMULATED) ----------
+            function generateCaptionFromTemplate(templateId, file) {
+                const fileName = file.name.replace(/\.[^/.]+$/, '');
+                const fileSize = (file.size / 1024).toFixed(0);
+                const isVideo = file.type.startsWith('video/');
+                const mediaType = isVideo ? 'video' : 'foto';
+
+                // Kumpulan template berdasarkan referensi Canva
+                const templates = {
+                    '1': {
+                        // Elegan & Mewah
+                        prefix: '✨ "Keanggunan yang abadi.',
+                        suffix: 'Setiap detail bercerita tentang keindahan."',
+                        vibe: '🌹 Elegan & Mewah'
+                    },
+                    '2': {
+                        // Bold & Berani
+                        prefix: '🔥 "Berani tampil beda.',
+                        suffix: 'Kepercayaan diri adalah gaya terbaik."',
+                        vibe: '⚡ Bold & Berani'
+                    },
+                    '3': {
+                        // Natural & Santai
+                        prefix: '🌿 "Kebahagiaan sederhana.',
+                        suffix: 'Nikmati momen, karena hidup itu indah."',
+                        vibe: '🍃 Natural & Santai'
+                    },
+                    '4': {
+                        // Inspiratif
+                        prefix: '💫 "Mimpi besar dimulai dari langkah kecil.',
+                        suffix: 'Percaya pada proses, raih bintang."',
+                        vibe: '🌟 Inspiratif'
+                    },
+                    '5': {
+                        // Kreatif & Cinematic
+                        prefix: '🎬 "Setiap frame adalah cerita.',
+                        suffix: 'Hidup adalah sinema, jadilah sutradaramu."',
+                        vibe: '🎥 Kreatif & Cinematic'
+                    }
+                };
+
+                const tpl = templates[templateId] || templates['1'];
+
+                // Buat caption dengan sentuhan personal
+                const caption = `${tpl.prefix}\n\n` +
+                    `📸 ${mediaType.toUpperCase()} — ${fileName}\n` +
+                    `📦 Ukuran: ${fileSize} KB\n` +
+                    `🗓️ ${new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}\n\n` +
+                    `${tpl.suffix}\n\n` +
+                    `#${mediaType} #${fileName.replace(/\s/g,'')} #${tpl.vibe.replace(/\s/g,'')} #CaptionForge`;
+
+                return caption;
+            }
+
+            // ---------- DISPLAY CAPTION ----------
+            function displayCaption(caption) {
+                captionBody.innerHTML = caption.replace(/\n/g, '<br>');
+                resultBox.classList.add('show');
+                // scroll to result
+                resultBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+
+            // ---------- COPY CAPTION ----------
+            copyBtn.addEventListener('click', function() {
+                if (!currentCaption) {
+                    alert('Tidak ada caption untuk disalin.');
+                    return;
+                }
+                navigator.clipboard.writeText(currentCaption).then(() => {
+                    // feedback
+                    const originalText = copyBtn.innerHTML;
+                    copyBtn.innerHTML = '<i class="fas fa-check"></i> Tersalin!';
+                    setTimeout(() => {
+                        copyBtn.innerHTML = originalText;
+                    }, 2000);
+                }).catch(() => {
+                    alert('Gagal menyalin. Silakan salin manual.');
+                });
+            });
+
+            // ---------- CLEANUP (optional) ----------
+            window.addEventListener('beforeunload', function() {
+                // Revoke object URLs if needed
+            });
+
+        })();
+    </script>
+
+</body>
+</html>
